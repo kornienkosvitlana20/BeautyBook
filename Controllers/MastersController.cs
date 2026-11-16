@@ -44,20 +44,34 @@ public class MastersController(ApplicationDbContext db) : Controller
         }
 
         // Сортування каталогу
-        query = sort switch
+        if (sort == "price_asc" || sort == "price_desc")
         {
-            "price_asc" => query
-                .OrderBy(m => !m.Services.Any())
-                .ThenBy(m => m.Services.Min(s => (decimal?)s.Price))
-                .ThenBy(m => m.FullName),
+            // Завантажуємо відфільтрованих майстрів із послугами.
+            // Сортуємо за ціною в C#, оскільки SQLite не підтримує Min(decimal).
+            var mastersByPrice = await query.ToListAsync();
 
-            "price_desc" => query
-                .OrderBy(m => !m.Services.Any())
-                .ThenByDescending(m => m.Services.Min(s => (decimal?)s.Price))
-                .ThenBy(m => m.FullName),
+            var sortedMasters = sort == "price_asc"
+                ? mastersByPrice
+                    .OrderBy(m => !m.Services.Any())
+                    .ThenBy(m => m.Services.Min(s => s.Price))
+                    .ThenBy(m => m.FullName)
+                    .ToList()
+                : mastersByPrice
+                    .OrderBy(m => !m.Services.Any())
+                    .ThenByDescending(m => m.Services.Min(s => s.Price))
+                    .ThenBy(m => m.FullName)
+                    .ToList();
 
-            _ => query.OrderBy(m => m.FullName)
-        };
+            ViewBag.Search = search;
+            ViewBag.City = city;
+            ViewBag.Specialty = specialty;
+            ViewBag.Sort = sort;
+
+            return View(sortedMasters);
+        }
+
+        // Звичайне сортування за ім'ям
+        query = query.OrderBy(m => m.FullName);
 
         ViewBag.Search = search;
         ViewBag.City = city;
