@@ -10,7 +10,8 @@ public class MastersController(ApplicationDbContext db) : Controller
     public async Task<IActionResult> Index(
         string? search,
         string? city,
-        string? specialty)
+        string? specialty,
+        string? sort)
     {
         search = search?.Trim();
         city = city?.Trim();
@@ -42,13 +43,28 @@ public class MastersController(ApplicationDbContext db) : Controller
             query = query.Where(m => m.Specialty.Contains(specialty));
         }
 
+        // Сортування каталогу
+        query = sort switch
+        {
+            "price_asc" => query
+                .OrderBy(m => !m.Services.Any())
+                .ThenBy(m => m.Services.Min(s => (decimal?)s.Price))
+                .ThenBy(m => m.FullName),
+
+            "price_desc" => query
+                .OrderBy(m => !m.Services.Any())
+                .ThenByDescending(m => m.Services.Min(s => (decimal?)s.Price))
+                .ThenBy(m => m.FullName),
+
+            _ => query.OrderBy(m => m.FullName)
+        };
+
         ViewBag.Search = search;
         ViewBag.City = city;
         ViewBag.Specialty = specialty;
+        ViewBag.Sort = sort;
 
-        var masters = await query
-            .OrderBy(m => m.FullName)
-            .ToListAsync();
+        var masters = await query.ToListAsync();
 
         return View(masters);
     }
