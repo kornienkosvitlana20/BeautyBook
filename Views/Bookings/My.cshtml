@@ -1,0 +1,3 @@
+@model IEnumerable<Booking>
+@{ ViewData["Title"] = "Мої записи"; }
+<h1>Мої записи</h1>@if(!Model.Any()){<p class="empty">У вас поки немає записів. <a asp-controller="Masters" asp-action="Index">Знайти майстра</a></p>}<div class="service-list">@foreach(var b in Model){<div class="service"><div><b>@b.Master?.FullName — @b.BeautyService?.Name</b><p>@b.StartAt.ToString("dd.MM.yyyy HH:mm") · @b.Status</p></div>@if(b.Status == "Confirmed" && b.StartAt > DateTime.Now){<form asp-action="Cancel" method="post"><input type="hidden" name="id" value="@b.Id"/><button class="btn danger" type="submit">Скасувати</button></form>}</div>}</div>

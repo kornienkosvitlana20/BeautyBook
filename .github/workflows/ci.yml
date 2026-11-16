@@ -1,0 +1,22 @@
+name: .NET CI
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet restore BeautyBook.csproj
+      - run: dotnet build BeautyBook.csproj --no-restore
+      - run: dotnet test tests/BeautyBook.Tests/BeautyBook.Tests.csproj --collect:"XPlat Code Coverage" --verbosity normal
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-coverage
+          path: "**/TestResults/**/coverage.cobertura.xml"

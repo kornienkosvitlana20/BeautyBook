@@ -1,0 +1,3 @@
+@model LoginViewModel
+@{ ViewData["Title"] = "Вхід"; }
+<h1>Вхід до BeautyBook</h1><form asp-action="Login" method="post" class="form-card"><div asp-validation-summary="All" class="validation"></div><label>Email</label><input asp-for="Email"/><label>Пароль</label><input asp-for="Password"/><label class="check"><input asp-for="RememberMe"/> Запам'ятати мене</label><button class="btn">Увійти</button></form>

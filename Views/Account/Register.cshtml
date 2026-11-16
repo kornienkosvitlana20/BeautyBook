@@ -1,0 +1,3 @@
+@model RegisterViewModel
+@{ ViewData["Title"] = "Реєстрація"; }
+<h1>Створити акаунт</h1><form asp-action="Register" method="post" class="form-card"><div asp-validation-summary="All" class="validation"></div><label>Ім'я та прізвище</label><input asp-for="FullName"/><span asp-validation-for="FullName"></span><label>Email</label><input asp-for="Email"/><span asp-validation-for="Email"></span><label>Місто</label><input asp-for="City"/><label>Пароль (мінімум 8 символів, цифра)</label><input asp-for="Password"/><span asp-validation-for="Password"></span><label>Повторіть пароль</label><input asp-for="ConfirmPassword"/><span asp-validation-for="ConfirmPassword"></span><button class="btn">Зареєструватися</button></form>

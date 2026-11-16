@@ -1,0 +1,11 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+beautybook.db
+beautybook.db-shm
+beautybook.db-wal
+TestResults/
+coverage/
