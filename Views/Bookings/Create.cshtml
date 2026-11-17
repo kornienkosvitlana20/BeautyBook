@@ -1,3 +1,45 @@
 @model BookingViewModel
-@{ ViewData["Title"] = "Новий запис"; var master = (Master)ViewBag.Master; }
-<h1>Запис до @master.FullName</h1><form asp-action="Create" method="post" class="form-card"><div asp-validation-summary="All" class="validation"></div><input type="hidden" asp-for="MasterId"/><label>Послуга</label><select asp-for="BeautyServiceId"><option value="">Оберіть послугу</option>@foreach(var s in master.Services){<option value="@s.Id">@s.Name — @s.Price грн (@s.DurationMinutes хв)</option>}</select><span asp-validation-for="BeautyServiceId"></span><label>Дата та час</label><input asp-for="StartAt" type="datetime-local"/><span asp-validation-for="StartAt"></span><button class="btn">Підтвердити запис</button></form>
+@{
+    ViewData["Title"] = "Новий запис";
+    var master = (Master)ViewBag.Master;
+    // Слоти часу з кроком 15 хвилин (08:00–19:45)
+    var slots = new List<TimeSpan>();
+    for (var t = TimeSpan.FromHours(8); t < TimeSpan.FromHours(20); t += TimeSpan.FromMinutes(15)) { slots.Add(t); }
+}
+<a asp-controller="Masters" asp-action="Details" asp-route-id="@master.Id">← До профілю майстра</a>
+<h1>Запис до майстра</h1>
+<p class="booking-master"><b>@master.FullName</b> · @master.Specialty · @master.City</p>
+
+<form asp-action="Create" method="post" class="form-card">
+    <div asp-validation-summary="All" class="validation"></div>
+    <input type="hidden" asp-for="MasterId" />
+
+    <label asp-for="BeautyServiceId">Послуга</label>
+    <select asp-for="BeautyServiceId">
+        <option value="">— Оберіть послугу —</option>
+        @foreach (var s in master.Services)
+        {
+            <option value="@s.Id" selected="@(s.Id == Model.BeautyServiceId)">@s.Name — @s.Price.ToString("0") грн, @s.DurationMinutes хв</option>
+        }
+    </select>
+
+    <div class="form-row">
+        <div>
+            <label asp-for="Date">Дата</label>
+            <input asp-for="Date" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+        </div>
+        <div>
+            <label asp-for="Time">Час</label>
+            <select asp-for="Time">
+                <option value="">— Час —</option>
+                @foreach (var t in slots)
+                {
+                    <option value="@t.ToString(@"hh\:mm")" selected="@(t == Model.Time)">@t.ToString(@"hh\:mm")</option>
+                }
+            </select>
+        </div>
+    </div>
+    <p class="hint">Запис можливий лише на майбутній час із кроком 15 хвилин.</p>
+
+    <button class="btn" type="submit">Підтвердити запис</button>
+</form>

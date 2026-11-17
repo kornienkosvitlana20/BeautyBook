@@ -34,7 +34,8 @@ public class BookingsController(
         return View(new BookingViewModel
         {
             MasterId = masterId,
-            StartAt = DateTime.Now.AddDays(1).Date.AddHours(10)
+            Date = DateTime.Today.AddDays(1),
+            Time = TimeSpan.FromHours(10)
         });
     }
 
@@ -57,20 +58,46 @@ public class BookingsController(
                 x.Id == model.BeautyServiceId &&
                 x.MasterId == model.MasterId);
 
-        if (service is null)
+        // Якщо послугу не обрано взагалі, помилку вже додала валідація моделі
+        if (service is null && model.BeautyServiceId > 0)
         {
             ModelState.AddModelError(
                 nameof(model.BeautyServiceId),
-                "Оберіть послугу цього майстра.");
+                "Обрана послуга не належить цьому майстру. Оберіть послугу зі списку.");
         }
-
-        // Перевіряємо дату та час
-        if (!DomainRules.IsValidAppointmentTime(
-                model.StartAt, DateTime.Now))
+        else if (service is null && !HasError(nameof(model.BeautyServiceId)))
         {
             ModelState.AddModelError(
-                nameof(model.StartAt),
-                "Оберіть майбутній час із кроком 15 хвилин.");
+                nameof(model.BeautyServiceId),
+                "Оберіть послугу.");
+        }
+
+        // Перевіряємо дату та час (окремі повідомлення для кожної причини)
+        if (model.Date is null || model.Time is null)
+        {
+            if (!HasError(nameof(model.Date)) && !HasError(nameof(model.Time)))
+            {
+                ModelState.AddModelError(
+                    nameof(model.StartAt),
+                    "Оберіть дату та час запису.");
+            }
+        }
+        else
+        {
+            var now = DateTime.Now;
+
+            if (model.StartAt <= now)
+            {
+                ModelState.AddModelError(
+                    nameof(model.StartAt),
+                    "Не можна записатися на минулу дату або час. Оберіть майбутній час.");
+            }
+            else if (!DomainRules.IsValidAppointmentTime(model.StartAt, now))
+            {
+                ModelState.AddModelError(
+                    nameof(model.StartAt),
+                    "Час запису має бути кратним 15 хвилинам (наприклад, 10:00, 10:15, 10:30).");
+            }
         }
 
         if (!ModelState.IsValid || service is null)
@@ -133,6 +160,10 @@ public class BookingsController(
             await db.SaveChangesAsync();
             await transaction.CommitAsync();
 
+            TempData["Success"] =
+                $"Запис створено: {service.Name} у майстра {master.FullName}, " +
+                $"{model.StartAt:dd.MM.yyyy} о {model.StartAt:HH:mm}.";
+
             return RedirectToAction(nameof(My));
         }
         catch (SqliteException ex)
@@ -146,6 +177,9 @@ public class BookingsController(
             return View(model);
         }
     }
+
+    private bool HasError(string key)
+        => ModelState.TryGetValue(key, out var entry) && entry.Errors.Count > 0;
 
     public async Task<IActionResult> My()
     {
@@ -167,6 +201,11 @@ public class BookingsController(
     {
         var userId = users.GetUserId(User);
 
+        if (userId is null)
+            return Challenge();
+
+        // Шукаємо запис лише серед записів поточного користувача:
+        // чужий запис для нього "не існує" (404)
         var booking = await db.Bookings
             .FirstOrDefaultAsync(b =>
                 b.Id == id && b.CustomerId == userId);
@@ -174,16 +213,24 @@ public class BookingsController(
         if (booking is null)
             return NotFound();
 
-        if (booking.StartAt <= DateTime.Now ||
-            booking.Status != "Confirmed")
+        if (booking.Status != "Confirmed")
         {
-            return BadRequest(
-                "Неможливо скасувати цей запис.");
+            TempData["Error"] = "Цей запис уже скасовано.";
+            return RedirectToAction(nameof(My));
         }
 
+        if (booking.StartAt <= DateTime.Now)
+        {
+            TempData["Error"] = "Не можна скасувати запис, який уже відбувся або розпочався.";
+            return RedirectToAction(nameof(My));
+        }
+
+        // Не видаляємо запис, а лише змінюємо статус
         booking.Status = "Cancelled";
 
         await db.SaveChangesAsync();
+
+        TempData["Success"] = "Запис скасовано.";
 
         return RedirectToAction(nameof(My));
     }
