@@ -1,3 +1,52 @@
 @model IEnumerable<Booking>
-@{ ViewData["Title"] = "Мої записи"; }
-<h1>Мої записи</h1>@if(!Model.Any()){<p class="empty">У вас поки немає записів. <a asp-controller="Masters" asp-action="Index">Знайти майстра</a></p>}<div class="service-list">@foreach(var b in Model){<div class="service"><div><b>@b.Master?.FullName — @b.BeautyService?.Name</b><p>@b.StartAt.ToString("dd.MM.yyyy HH:mm") · @b.Status</p></div>@if(b.Status == "Confirmed" && b.StartAt > DateTime.Now){<form asp-action="Cancel" method="post"><input type="hidden" name="id" value="@b.Id"/><button class="btn danger" type="submit">Скасувати</button></form>}</div>}</div>
+@{
+    ViewData["Title"] = "Мої записи";
+    var now = DateTime.Now;
+}
+<h1>Мої записи</h1>
+
+@if (TempData["Success"] is string success)
+{
+    <div class="alert success" role="status">@success</div>
+}
+@if (TempData["Error"] is string error)
+{
+    <div class="alert error" role="alert">@error</div>
+}
+
+@if (!Model.Any())
+{
+    <p class="empty">У вас поки немає записів. <a asp-controller="Masters" asp-action="Index">Знайти майстра</a></p>
+}
+else
+{
+    <div class="booking-list">
+        @foreach (var b in Model)
+        {
+            var canCancel = b.Status == "Confirmed" && b.StartAt > now;
+            var (statusText, statusCss) = b.Status switch
+            {
+                "Cancelled" => ("Скасовано", "cancelled"),
+                "Confirmed" when b.StartAt <= now => ("Відбувся", "past"),
+                "Confirmed" => ("Підтверджено", "confirmed"),
+                _ => (b.Status, "past")
+            };
+            <article class="booking-card">
+                <div class="booking-info">
+                    <p class="booking-title"><b>@b.BeautyService?.Name</b></p>
+                    <p>Майстер: @b.Master?.FullName</p>
+                    <p>@b.StartAt.ToString("dd.MM.yyyy") о @b.StartAt.ToString("HH:mm") – @b.EndAt.ToString("HH:mm")</p>
+                    <p>Вартість: @(b.BeautyService?.Price.ToString("0.00") ?? "—") грн</p>
+                    <span class="status @statusCss">@statusText</span>
+                </div>
+                @if (canCancel)
+                {
+                    <form asp-action="Cancel" method="post" onsubmit="return confirm('Скасувати цей запис?');">
+                        <input type="hidden" name="id" value="@b.Id" />
+                        <button class="btn danger" type="submit">Скасувати</button>
+                    </form>
+                }
+            </article>
+        }
+    </div>
+}
