@@ -1,5 +1,9 @@
 @model IEnumerable<Master>
 @{ ViewData["Title"] = "Майстри"; }
-<h1>Знайти свого майстра</h1><form method="get" class="filters"><input name="search" value="@ViewBag.Search" placeholder="Ім'я або спеціальність"/><input name="city" value="@ViewBag.City" placeholder="Місто"/><input name="specialty" value="@ViewBag.Specialty" placeholder="Послуга / спеціальність"/><button class="btn">Шукати</button></form>
+<h1>Знайти свого майстра</h1><form method="get" class="filters"><input name="search" value="@ViewBag.Search" placeholder="Ім'я або спеціальність"/><input name="city" value="@ViewBag.City" placeholder="Місто"/><input name="specialty" value="@ViewBag.Specialty" placeholder="Послуга / спеціальність"/><select name="sort">
+    <option value="" selected="@(ViewBag.Sort == null)">За ім'ям</option>
+    <option value="price_asc" selected="@(ViewBag.Sort == "price_asc")">Спочатку дешевші</option>
+    <option value="price_desc" selected="@(ViewBag.Sort == "price_desc")">Спочатку дорожчі</option>
+</select><button class="btn">Шукати</button></form>
 <div class="cards">@foreach(var m in Model){<article class="master-card"><div class="avatar">@m.FullName.Substring(0,1)</div><p class="eyebrow">@m.Specialty · @m.City</p><h2>@m.FullName</h2><p>@m.Description</p><p>@m.Services.Count послуг</p><a class="btn secondary" asp-action="Details" asp-route-id="@m.Id">Переглянути профіль</a></article>}</div>
 @if(!Model.Any()){<p class="empty">За вашим запитом майстрів не знайдено.</p>}

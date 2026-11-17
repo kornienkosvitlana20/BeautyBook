@@ -1,3 +1,100 @@
+
 @model Master
-@{ ViewData["Title"] = Model.FullName; }
-<a asp-action="Index">← До списку майстрів</a><section class="profile"><div class="avatar large">@Model.FullName.Substring(0,1)</div><div><p class="eyebrow">@Model.Specialty · @Model.City</p><h1>@Model.FullName</h1><p>@Model.Description</p></div></section><h2>Послуги та ціни</h2><div class="service-list">@foreach(var s in Model.Services){<div class="service"><div><b>@s.Name</b><p>@s.DurationMinutes хвилин</p></div><strong>@s.Price.ToString("0.00") грн</strong></div>}</div><a class="btn" asp-controller="Bookings" asp-action="Create" asp-route-masterId="@Model.Id">Записатися онлайн</a>
+
+@{
+    ViewData["Title"] = Model.FullName;
+}
+
+<div class="profile-page">
+
+    <a asp-action="Index" class="back-link">
+        ← Повернутися до списку майстрів
+    </a>
+
+    <section class="profile">
+
+        <div class="avatar large">
+            @if (!string.IsNullOrWhiteSpace(Model.PhotoUrl))
+            {
+            <img src="@Model.PhotoUrl"
+                 alt="Фото майстра @Model.FullName" />
+            }
+            else
+            {
+            <span>@Model.FullName.Substring(0, 1)</span>
+            }
+        </div>
+
+        <div class="profile-info">
+
+            <p class="eyebrow">
+                @Model.Specialty · @Model.City
+            </p>
+
+            <h1>@Model.FullName</h1>
+
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+            <p>@Model.Description</p>
+            }
+            else
+            {
+            <p>Інформація про майстра поки відсутня.</p>
+            }
+
+            <p>
+                Кількість послуг:
+                <strong>@Model.Services.Count</strong>
+            </p>
+
+        </div>
+
+    </section>
+
+    <section class="services-section">
+
+        <h2>Послуги та ціни</h2>
+
+        @if (Model.Services.Any())
+        {
+        <div class="service-list">
+
+            @foreach (var service in Model.Services.OrderBy(s => s.Name))
+                {
+            <div class="service">
+
+                <div>
+                    <h3>@service.Name</h3>
+
+                    <p>
+                        Тривалість:
+                        @service.DurationMinutes хвилин
+                    </p>
+                </div>
+
+                <strong>
+                    @service.Price.ToString("0.00") грн
+                </strong>
+
+            </div>
+                }
+
+        </div>
+
+        <a class="btn"
+           asp-controller="Bookings"
+           asp-action="Create"
+           asp-route-masterId="@Model.Id">
+            Записатися онлайн
+        </a>
+        }
+        else
+        {
+        <p class="empty">
+            Наразі цей майстер не додав жодної послуги.
+        </p>
+        }
+
+    </section>
+
+</div>
